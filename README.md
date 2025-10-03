@@ -6,6 +6,8 @@ A production-ready **Extract-Load-Transform (ELT)** pipeline built with **Apache
 [![Quality Checks](https://img.shields.io/badge/quality%20checks-54%20passing-success)](include/soda/checks/)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](requirements.txt)
 [![Airflow](https://img.shields.io/badge/airflow-2.10.5-orange.svg)](requirements.txt)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue.svg)](.github/workflows/)
+[![Docker](https://img.shields.io/badge/docker-automated-blue.svg)](Dockerfile)
 
 ---
 
@@ -24,6 +26,7 @@ A production-ready **Extract-Load-Transform (ELT)** pipeline built with **Apache
 - [Data Quality](#-data-quality)
 - [Testing](#-testing)
 - [Database Schema](#-database-schema)
+- [CI/CD Pipeline](#-cicd-pipeline)
 - [Development](#-development)
 
 ---
@@ -725,7 +728,52 @@ Video performance metrics (904 rows)
 
 ---
 
-## 💻 Development
+## � CI/CD Pipeline
+
+The project includes automated GitHub Actions workflows for continuous integration and deployment.
+
+### Workflows
+
+#### **CI - Tests & Validation** 
+Runs automatically on every push and pull request to `main` or `develop` branches.
+
+**Jobs:**
+1. **🔍 Lint Code** - Code quality checks with flake8 and black
+2. **🧪 Run Tests** - Execute all 59 tests with coverage reporting
+3. **✅ Validate DAGs** - Airflow DAG syntax and structure validation
+4. **🔒 Security Scan** - Dependency vulnerability checking
+5. **📊 Build Summary** - Aggregated results and status
+
+**Trigger manually:**
+```bash
+# Via GitHub UI: Actions tab → CI - Tests & Validation → Run workflow
+```
+
+#### **Docker Build**
+Builds and validates Docker image on release tags.
+
+**Jobs:**
+1. **🐳 Build Docker Image** - Multi-platform build with caching
+2. **🧪 Test Docker Image** - Validate image functionality
+
+**Trigger on release:**
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### Viewing Results
+
+1. Go to **Actions** tab on GitHub repository
+2. Click on a workflow run to see detailed logs
+3. Check **Summary** for quick overview
+4. Review coverage reports and DAG validation
+
+**Workflow files:** [`.github/workflows/`](.github/workflows/)
+
+---
+
+## �💻 Development
 
 ### Local Development Setup
 
