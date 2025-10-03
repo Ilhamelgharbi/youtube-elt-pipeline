@@ -212,6 +212,30 @@ docker-compose.override.yml.backup
 temp_*.sql
 scratch_*.sql
 
+# Documentation cleanup - keep only README.md
+PROJECT_GUIDE.md
+PROJECT_REQUIREMENTS_VERIFICATION.md
+PROJECT_REQUIREMENTS.md
+TEST_SUITE_SUMMARY.md
+TESTS_UPDATE_SUMMARY.md
+GITIGNORE_UPDATE.md
+GIT_SETUP_COMPLETE.md
+DAG_LOGIC_VERIFICATION.md
+DURATION_TRANSFORMATION.md
+DURATION_TRANSFORMATION_VERIFICATION.md
+DURATION_QUICK_START.md
+FIX_UNIQUE_CONSTRAINT.md
+LOAD_DAG_ALIGNMENT.md
+DATA_QUALITY_ANALYSIS.md
+DATA_SCHEMA_ANALYSIS.md
+
+# Temporary files
+test_duration_transform.py
+update_duration.sql
+fix_unique_constraint.ps1
+projet.txt
+CHANGES_SUMMARY.txt
+
 # ==========================================
 # ✅ IMPORTANT: Keep These Files
 # ==========================================
