@@ -1,0 +1,91 @@
+# ============================================
+# 🚀 YouTube ELT Pipeline - Docker Build
+# ============================================
+# Build and validate Docker image
+# Runs on: Release tags or manual trigger
+
+name: CD - Docker Build
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  IMAGE_NAME: youtube-elt-pipeline
+
+jobs:
+  # ==========================================
+  # Job 1: Build Docker Image
+  # ==========================================
+  build:
+    name: 🐳 Build Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: 📋 Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      
+      - name: 🔨 Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: ✅ Validate Docker image
+        run: |
+          echo "### 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Docker image built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags**: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================
+  # Job 2: Test Docker Image
+  # ==========================================
+  test-image:
+    name: 🧪 Test Docker Image
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐳 Build test image
+        run: |
+          docker build -t test-image:latest .
+      
+      - name: 🧪 Test image contents
+        run: |
+          echo "Testing Docker image..."
+          docker run --rm test-image:latest python --version
+          docker run --rm test-image:latest pip list | grep -E "(apache-airflow|soda-core|psycopg2|google-api)"
+      
+      - name: ✅ Image validation summary
+        run: |
+          echo "### 🧪 Docker Image Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All image tests passed" >> $GITHUB_STEP_SUMMARY
