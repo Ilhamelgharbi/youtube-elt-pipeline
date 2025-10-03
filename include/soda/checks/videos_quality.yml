@@ -1,0 +1,190 @@
+# ==========================================
+# 🔍 Soda Core Quality Checks - YouTube ELT Pipeline
+# ==========================================
+# Validates: completeness, format, duplicates, business rules, transformations
+# Aligned with: staging.youtube_videos_raw, core.videos, core.video_statistics
+# Requirements: Tests de complétude, cohérence et format (projet.txt)
+# ==========================================
+
+# ==========================================
+# STAGING.YOUTUBE_VIDEOS_RAW - Raw Data
+# ==========================================
+checks for staging.youtube_videos_raw:
+  # 1️⃣ Complétude (Completeness)
+  - row_count > 0:
+      name: "At least one video extracted"
+  - missing_count(video_id) = 0:
+      name: "No missing video_id"
+  - missing_count(title) = 0:
+      name: "No missing title"
+  - missing_count(published_at) = 0:
+      name: "No missing published_at"
+  - missing_count(duration) = 0:
+      name: "No missing duration"
+  - missing_count(duration_readable) = 0:
+      name: "No missing duration_readable"
+  - missing_count(channel_id) = 0:
+      name: "No missing channel_id"
+  - missing_count(channel_handle) = 0:
+      name: "No missing channel_handle"
+  - missing_count(extraction_date) = 0:
+      name: "No missing extraction_date"
+  
+  # 2️⃣ Format Validation
+  - invalid_count(video_id) = 0:
+      valid length: 11
+      name: "Video ID must be exactly 11 characters"
+  - invalid_count(title) = 0:
+      valid min length: 1
+      valid max length: 500
+      name: "Title length must be 1-500 characters"
+  - invalid_count(duration) = 0:
+      valid regex: '^P.*'
+      name: "Duration must be ISO 8601 format (PT...)"
+  - invalid_count(duration_readable) = 0:
+      valid regex: '^\d+:\d{2}(:\d{2})?$'
+      name: "Duration readable must be M:SS, MM:SS or H:MM:SS format"
+  - invalid_count(channel_id) = 0:
+      valid min length: 10
+      valid max length: 50
+      name: "Channel ID format validation"
+  
+  # 3️⃣ Cohérence (Consistency) - Data Types
+  - invalid_count(view_count) = 0:
+      valid min: 0
+      name: "View count must be >= 0"
+  - invalid_count(like_count) = 0:
+      valid min: 0
+      name: "Like count must be >= 0"
+  - invalid_count(comment_count) = 0:
+      valid min: 0
+      name: "Comment count must be >= 0"
+  
+  # 4️⃣ Uniqueness (No Duplicates)
+  - duplicate_count(video_id) = 0:
+      name: "No duplicate video_id in staging"
+  
+  # 5️⃣ Freshness
+  - freshness(extraction_date) < 1d:
+      name: "Data extracted within last 24 hours"
+  - freshness(created_at) < 1d:
+      name: "Staging records created within last 24 hours"
+
+
+# ==========================================
+# CORE.VIDEOS - Transformed Video Metadata
+# ==========================================
+checks for core.videos:
+  # 1️⃣ Complétude (Completeness)
+  - row_count > 0:
+      name: "At least one video in core"
+  - missing_count(video_id) = 0:
+      name: "No missing video_id in core"
+  - missing_count(title) = 0:
+      name: "No missing title in core"
+  - missing_count(published_at) = 0:
+      name: "No missing published_at in core"
+  - missing_count(channel_id) = 0:
+      name: "No missing channel_id in core"
+  - missing_count(duration_seconds) = 0:
+      name: "No missing duration_seconds (transformation applied)"
+  - missing_count(duration_label) = 0:
+      name: "No missing duration_label (transformation applied)"
+  
+  # 2️⃣ Format Validation
+  - invalid_count(video_id) = 0:
+      valid length: 11
+      name: "Core: Video ID exactly 11 characters"
+  - invalid_count(title) = 0:
+      valid min length: 1
+      valid max length: 500
+      name: "Core: Title length 1-500 characters"
+  - invalid_count(duration_label) = 0:
+      valid values: ['short', 'long']
+      name: "Duration label must be 'short' or 'long'"
+  
+  # 3️⃣ Cohérence (Consistency) - Transformation Validation
+  - failed rows:
+      fail condition: duration_label = 'short' AND EXTRACT(EPOCH FROM duration_seconds) >= 60
+      name: "Videos labeled 'short' must be < 60 seconds"
+  - failed rows:
+      fail condition: duration_label = 'long' AND EXTRACT(EPOCH FROM duration_seconds) < 60
+      name: "Videos labeled 'long' must be >= 60 seconds"
+  - failed rows:
+      fail condition: duration_seconds IS NULL
+      name: "Duration seconds must not be NULL (ISO 8601 conversion)"
+  
+  # 4️⃣ Uniqueness
+  - duplicate_count(video_id) = 0:
+      name: "No duplicate video_id in core (PRIMARY KEY)"
+  
+  # 5️⃣ Freshness
+  - freshness(created_at) < 1d:
+      name: "Core videos created within last 24 hours"
+  - freshness(updated_at) < 1d:
+      name: "Core videos updated within last 24 hours"
+  
+  # 6️⃣ Distribution Validation
+  - failed rows:
+      fail condition: published_at > NOW()
+      name: "Published date cannot be in the future"
+
+
+# ==========================================
+# CORE.VIDEO_STATISTICS - Time-Series Metrics
+# ==========================================
+checks for core.video_statistics:
+  # 1️⃣ Complétude (Completeness)
+  - row_count > 0:
+      name: "At least one statistics record"
+  - missing_count(video_id) = 0:
+      name: "No missing video_id in statistics"
+  - missing_count(view_count) = 0:
+      name: "No missing view_count"
+  - missing_count(like_count) = 0:
+      name: "No missing like_count"
+  - missing_count(comment_count) = 0:
+      name: "No missing comment_count"
+  - missing_count(recorded_at) = 0:
+      name: "No missing recorded_at timestamp"
+  
+  # 2️⃣ Cohérence (Consistency) - Data Integrity
+  - invalid_count(view_count) = 0:
+      valid min: 0
+      name: "View count cannot be negative"
+  - invalid_count(like_count) = 0:
+      valid min: 0
+      name: "Like count cannot be negative"
+  - invalid_count(comment_count) = 0:
+      valid min: 0
+      name: "Comment count cannot be negative"
+  
+  # 3️⃣ Business Rules Validation
+  - failed rows:
+      fail condition: like_count > view_count
+      name: "Likes cannot exceed views"
+  - failed rows:
+      fail condition: comment_count > view_count
+      name: "Comments cannot exceed views"
+  - failed rows:
+      fail condition: recorded_at > NOW()
+      name: "Recorded timestamp cannot be in future"
+  
+  # 4️⃣ Freshness
+  - freshness(recorded_at) < 1d:
+      name: "Statistics recorded within last 24 hours"
+  - freshness(created_at) < 1d:
+      name: "Statistics created within last 24 hours"
+  
+  # 5️⃣ Referential Integrity
+  - values in (video_id) must exist in core.videos (video_id):
+      name: "All statistics must reference valid videos (FK constraint)"
+  
+  # 6️⃣ Data Quality - No Impossible Values
+  - failed rows:
+      fail condition: view_count = 0 AND like_count > 0
+      name: "Cannot have likes with zero views"
+  - failed rows:
+      fail condition: view_count = 0 AND comment_count > 0
+      name: "Cannot have comments with zero views"
+

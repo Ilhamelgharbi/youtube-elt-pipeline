@@ -1,0 +1,11 @@
+# 🔧 Soda Core Configuration
+# Configuration for PostgreSQL Data Warehouse connection
+
+data_source postgres_dwh:
+  type: postgres
+  host: ${POSTGRES_HOST}
+  port: ${POSTGRES_PORT}
+  username: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  database: ${POSTGRES_DB}
+  # No default schema - will use fully qualified table names in checks

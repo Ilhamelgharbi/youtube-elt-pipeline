@@ -1,0 +1,20 @@
+# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+# YouTube API
+google-api-python-client==2.108.0
+google-auth==2.23.4
+isodate==0.6.1
+
+# PostgreSQL
+psycopg2-binary==2.9.9
+apache-airflow-providers-postgres==5.7.1
+
+# Data Quality
+# Soda Core-style validation implemented in youtube_data_quality.py using SQL queries
+# No external packages needed - avoids dependency conflicts with Astro Runtime
+
+# Data Processing
+pandas==2.1.3
+numpy==1.26.0
+
+# Testing
+pytest==7.4.3
