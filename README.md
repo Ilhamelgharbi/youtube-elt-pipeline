@@ -20,6 +20,7 @@ A production-ready **Extract-Load-Transform (ELT)** pipeline built with **Apache
 - [Installation](#-installation)
 - [Configuration](#-configuration)
 - [Usage](#-usage)
+- [Automation Scripts](#-automation-scripts)
 - [Data Quality](#-data-quality)
 - [Testing](#-testing)
 - [Database Schema](#-database-schema)
@@ -398,7 +399,194 @@ astro dev stop
 
 ---
 
-## 🛡️ Data Quality
+## �️ Automation Scripts
+
+The project includes PowerShell automation scripts in the `scripts/` directory for streamlined deployment, testing, and data management.
+
+### Available Scripts
+
+#### 1. **setup.ps1** - Initial Project Setup ⚙️
+
+Automates the complete initial setup of the project.
+
+```powershell
+.\scripts\setup.ps1
+```
+
+**What it does:**
+- ✅ Checks Docker, Astro CLI, and Python installation
+- ✅ Creates `.env` file from `.env.example`
+- ✅ Creates required directories (`include/youtube_data`, `include/soda/reports`, `logs`)
+- ✅ Installs Python dependencies from `requirements.txt`
+- ✅ Starts Airflow with `astro dev start`
+- ✅ Displays access information and next steps
+
+**Use when:** Setting up the project for the first time.
+
+---
+
+#### 2. **test.ps1** - Run All Tests 🧪
+
+Executes the complete test suite with coverage reporting.
+
+```powershell
+.\scripts\test.ps1
+```
+
+**What it does:**
+- ✅ Checks pytest installation (installs if missing)
+- ✅ Runs all 59 tests in `tests/` directory
+- ✅ Generates coverage report (terminal + HTML)
+- ✅ Validates DAG file structure
+- ✅ Color-coded output for easy reading
+
+**Output:**
+- Terminal: Test results with coverage percentage
+- HTML: `htmlcov/index.html` (detailed coverage report)
+
+**Use when:** Validating code changes, before commits, or CI/CD integration.
+
+---
+
+#### 3. **copy_data.ps1** - Data Synchronization 📦
+
+Manages file synchronization between Docker container and local filesystem.
+
+```powershell
+# Copy Airflow logs from container to host
+.\scripts\copy_data.ps1 logs
+
+# Copy JSON data files from container to host
+.\scripts\copy_data.ps1 json
+
+# Copy Soda quality reports from container to host
+.\scripts\copy_data.ps1 reports
+
+# Copy custom file to container
+.\scripts\copy_data.ps1 to-container include/youtube_data/custom.json
+
+# Copy custom file from container
+.\scripts\copy_data.ps1 from-container /usr/local/airflow/logs
+```
+
+**Available Actions:**
+| Action | Description |
+|--------|-------------|
+| `logs` | Copy Airflow logs from container to `logs_backup_<timestamp>/` |
+| `json` | Copy JSON data files to `include/youtube_data/` |
+| `reports` | Copy Soda quality reports to `include/soda/reports/` |
+| `to-container [path]` | Copy file/folder from host to container |
+| `from-container [path]` | Copy file/folder from container to host |
+
+**Use when:** Backing up data, extracting logs for debugging, or synchronizing files.
+
+---
+
+#### 4. **deploy.ps1** - Deployment Automation 🚀
+
+Manages Airflow deployment, restart, and status monitoring.
+
+```powershell
+# Start Airflow locally (first time or after stop)
+.\scripts\deploy.ps1 local
+
+# Restart all Airflow services
+.\scripts\deploy.ps1 restart
+
+# Rebuild Docker images and restart
+.\scripts\deploy.ps1 build
+
+# Check current status and access points
+.\scripts\deploy.ps1 status
+
+# Stop all Airflow containers
+.\scripts\deploy.ps1 stop
+```
+
+**Available Actions:**
+| Action | Description |
+|--------|-------------|
+| `local` | Start Airflow locally (default action) |
+| `restart` | Stop and restart all Airflow services |
+| `build` | Rebuild Docker images from scratch and restart |
+| `status` | Display container status, access points, and data counts |
+| `stop` | Stop all Airflow containers |
+
+**Use when:** Starting/stopping Airflow, applying configuration changes, or troubleshooting.
+
+---
+
+### Quick Start Workflow
+
+**First Time Setup:**
+```powershell
+# 1. Run automated setup
+.\scripts\setup.ps1
+
+# 2. Edit environment variables with your API keys
+notepad .env
+
+# 3. Restart to apply configuration
+.\scripts\deploy.ps1 restart
+
+# 4. Run tests to verify everything works
+.\scripts\test.ps1
+```
+
+**Daily Development:**
+```powershell
+# Start Airflow
+.\scripts\deploy.ps1 local
+
+# Make code changes...
+
+# Run tests
+.\scripts\test.ps1
+
+# Copy data for analysis
+.\scripts\copy_data.ps1 json
+.\scripts\copy_data.ps1 reports
+
+# Stop when done
+.\scripts\deploy.ps1 stop
+```
+
+**Before Deployment/Submission:**
+```powershell
+# 1. Run all tests
+.\scripts\test.ps1
+
+# 2. Check Airflow status
+.\scripts\deploy.ps1 status
+
+# 3. Backup important data
+.\scripts\copy_data.ps1 json
+.\scripts\copy_data.ps1 reports
+.\scripts\copy_data.ps1 logs
+```
+
+---
+
+### Script Requirements
+
+All scripts require:
+- **Windows PowerShell 5.1+** or **PowerShell Core 7+**
+- **Docker Desktop** running
+- **Astro CLI** installed
+- **Python 3.12+** (for testing)
+
+**Troubleshooting:**
+
+If you get "execution policy" errors:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+For detailed script documentation, see [`scripts/README.md`](scripts/README.md).
+
+---
+
+## �🛡️ Data Quality
 
 ### Quality Check Categories
 
